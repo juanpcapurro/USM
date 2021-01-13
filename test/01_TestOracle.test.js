@@ -1,6 +1,8 @@
 const { BN } = require('@openzeppelin/test-helpers')
 
 const TestOracle = artifacts.require('TestOracle')
+const DiaOracle = artifacts.require('DiaOracle')
+const DiaOracleAdapter = artifacts.require('DiaOracleAdapter')
 
 const Aggregator = artifacts.require('MockChainlinkAggregatorV3')
 const ChainlinkOracle = artifacts.require('ChainlinkOracle')
@@ -177,6 +179,66 @@ contract('Oracle pricing', (accounts) => {
       const uniswapPrice = await rawOracle.latestUniswapTWAPPrice()
       const targetOraclePrice = median(chainlinkPriceWAD, compoundPriceWAD, uniswapPrice)
       oraclePrice.toString().should.equal(targetOraclePrice.toString())
+    })
+  })
+
+  describe('with DiaOracle', () => {
+    const [deployer] = accounts
+    const coinName = 'ETH/USD'
+    const ethPrice = '1120000000000000000000'
+    let oracle
+    describe('GIVEN a DiaOracle', () => {
+      before(async () => {
+        oracle = await DiaOracle.new({ from: deployer })
+      })
+      describe('WHEN asking for a non-set price', () => {
+        let coinInfo
+        before(async () => {
+          coinInfo = await oracle.getCoinInfo(coinName)
+        })
+        it('THEN price is zero', () => {
+          const price = coinInfo[0]
+          const supply = coinInfo[1]
+          const lastUpdateTimestamp = coinInfo[2]
+          const symbol = coinInfo[3]
+          price.toString().should.equal('0')
+          supply.toString().should.equal('0')
+          lastUpdateTimestamp.toString().should.equal('0')
+          symbol.should.equal('')
+        })
+        const now = Date.now().toString()
+        describe('AND WHEN setting a price', () => {
+          before(async () => {
+            await oracle.updateCoinInfo(coinName, 'ETH/USD', ethPrice, '4', now)
+            coinInfo = await oracle.getCoinInfo(coinName)
+          })
+          it('THEN the price can be read', () => {
+            const price = coinInfo[0]
+            const supply = coinInfo[1]
+            const lastUpdateTimestamp = coinInfo[2]
+            const symbol = coinInfo[3]
+            price.toString().should.equal(ethPrice)
+            supply.toString().should.equal('4')
+            lastUpdateTimestamp.toString().should.equal(now)
+            symbol.should.equal('ETH/USD')
+          })
+        })
+        describe('GIVEN a DIA oracle adapter', () => {
+          let adapter
+          before(async () => {
+            adapter = await DiaOracleAdapter.new(oracle.address, coinName)
+          })
+          describe('WHEN calling latestPrice()', () => {
+            let price
+            before(async () => {
+              price = await adapter.latestPrice()
+            })
+            it('THEN the price from the dia oracle is returned', () => {
+              price.toString().should.equal(ethPrice)
+            })
+          })
+        })
+      })
     })
   })
 })
