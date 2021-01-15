@@ -1,37 +1,24 @@
-# USM - Minimalist USD Stablecoin
+# USM - DIA
 
-Originally proposed by [@jacob-eliosoff](https://github.com/jacob-eliosoff) in [this Medium article](https://medium.com/@jacob.eliosoff/whats-the-simplest-possible-decentralized-stablecoin-4a25262cf5e8), USM is an attempt to answer the question "What is the simplest possible decentralised stablecoin?"
+This is a fork of USM using DIA oracles. Changes added:
+- `DiaOracle.sol` as an external contract, with some changes in order to use the same compiler as the rest of the project.
+- `DiaOracleAdapter.sol`: A contract implementing USMs Oracle API and consuming a DIA oracle
+- `USMDIA.sol`: A contract that implements USMTemplate and DiaOracleAdapter. This is the contract we care about most of the time
+- Disabled the Proxy for simplicity.
 
-## Networks & Addresses
+## deployed contracts
+- [DiaOracle](https://kovan.etherscan.io/address/0x559C34610e06526c31c9d4E3d03E86b56EcC9CA4), implement's dia oracle API.
 
-### Baby USM - Mainnet
+- [USMDIA](https://kovan.etherscan.io/address/0xB1075F59F9A7ABc2784925AE488aDC5842f080a4): the synthetic asset. It tracks the US dollar, so no changes from USM there.
 
-[Live Stats](https://usmfum.github.io/USM-Stats/)
+Both contracts are verified on Etherscan so you can play with them. [FUM](https://kovan.etherscan.io/address/0x6c4ca030b6be85edb7847e1bf00080ca18c253f6) is not, however (TODO). The main points of interest would be USMDIA's `fund`, `defund`, `mint` and `burn` functions.
 
-Baby USM is a "beta" version of USM. Baby USM expires on the 15th of January 2021 when it becomes withdraw-and-read-only. At this point, FUM and USM will be redeemable for ETH, but no more minting of either can occur.
+## What we expect from the oracle
 
-Baby USM and Baby FUM is not redeemable for USM or FUM. It is for test and reserach purposes only.
+The oracle must return a 18-decimal fixed-point uint256 representing the price of the collateral (for now always ETH) in terms of the synthetic. Examples:
 
-USM: [0x03eb7Ce2907e202bB70BAE3D7B0C588573d3cECC](https://etherscan.io/address/0x03eb7Ce2907e202bB70BAE3D7B0C588573d3cECC)
+- synthetic of USD, price of ETH $1200: `1200000000000000000000`
+- synthetic of USD, price of ETH $800: `800000000000000000000`
+- synthetic of Argetine Peso, price of ETH AR$185000: `185000000000000000000000`
 
-FUM: [0xf04a5D82ff8a801f7d45e9C14CDcf73defF1a394](https://etherscan.io/address/0xf04a5D82ff8a801f7d45e9C14CDcf73defF1a394)
-
-### Kovan
-
-USM: [0x21453979384f21D09534f8801467BDd5d90eCD6C](https://kovan.etherscan.io/address/0x21453979384f21D09534f8801467BDd5d90eCD6C)
-
-FUM: [0x96F8F5323Aa6CB0e6F311bdE6DEEFb1c81Cb1898](https://kovan.etherscan.io/address/0x96F8F5323Aa6CB0e6F311bdE6DEEFb1c81Cb1898)
-
-## How It Works
-
-USM is pegged to United States dollar, and maintains its stable value by minting USM in exchange for ETH, using the price of ETH at the time of minting.
-
-If ETH is worth $200, I deposit 1 ETH, I get 200 USM in return (minus a small minting fee). The same goes for burning, but in the opposite direction.
-
-This is what's known as a **CDP: Collateralised Debt Position.**
-
-The problem with CDPs is that if the asset used as collateral drops in value, which in our case is highly probable at any time due to the volatility of ETH, the contract could become undercollateralised. This is where the concept of Minimalist Funding Tokens, or FUM, come in.
-
-For more information on how FUM de-risks USM, read [Jacob's original article](https://medium.com/@jacob.eliosoff/whats-the-simplest-possible-decentralized-stablecoin-4a25262cf5e8).
-
-**UPDATE:** Read part two on [protecting against price exploits](https://medium.com/@jacob.eliosoff/usm-minimalist-stablecoin-part-2-protecting-against-price-exploits-a16f55408216).
+The 'ticker' is used in the name and symbol of the token, and is formatted as `collateral/synthetic`, so the deployed USMDIA is called `DIA synthetic for tickerETH/USD` and has symbol: `DIA-ETH/USD`.
