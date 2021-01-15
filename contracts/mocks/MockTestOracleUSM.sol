@@ -10,5 +10,5 @@ import "../USMTemplate.sol";
  * @notice A USMTemplate implementation for testing that uses only a simple TestOracle, no actual external source oracle
  */
 contract MockTestOracleUSM is USMTemplate, TestOracle {
-    constructor(uint price) public USMTemplate() TestOracle(price) {}
+    constructor(uint price) public USMTemplate("Minimal USD", "USM") TestOracle(price) {}
 }

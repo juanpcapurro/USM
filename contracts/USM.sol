@@ -10,7 +10,7 @@ contract USM is USMTemplate, MedianOracle {
         UniswapAnchoredView compoundView,
         IUniswapV2Pair uniswapPair, uint uniswapToken0Decimals, uint uniswapToken1Decimals, bool uniswapTokensInReverseOrder
     ) public
-        USMTemplate()
+        USMTemplate("Minimal USD", "USM")
         MedianOracle(chainlinkAggregator, compoundView,
                      uniswapPair, uniswapToken0Decimals, uniswapToken1Decimals, uniswapTokensInReverseOrder) {}
 

@@ -7,6 +7,6 @@ import "./external/DiaOracle.sol";
 
 contract USMDIA is USMTemplate, DiaOracleAdapter {
     constructor(DiaOracle oracle_, string memory ticker_) public
-        USMTemplate()
+        USMTemplate(string(abi.encodePacked("DIA synthetic for ticker",ticker_)), string(abi.encodePacked("DIA-",ticker_)))
         DiaOracleAdapter(oracle_, ticker_) {}
 }

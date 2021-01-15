@@ -49,7 +49,7 @@ abstract contract USMTemplate is IUSM, Oracle, ERC20Permit, Delegable {
     TimedValue public minFumBuyPriceStored;
     TimedValue public buySellAdjustmentStored = TimedValue({ timestamp: 0, value: uint224(WAD) });
 
-    constructor() public ERC20Permit("Minimal USD", "USM")
+    constructor(string memory name_, string memory symbol_) public ERC20Permit(name_,symbol_)
     {
         fum = new FUM(this);
     }
