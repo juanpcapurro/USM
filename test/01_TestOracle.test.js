@@ -182,62 +182,64 @@ contract('Oracle pricing', (accounts) => {
     })
   })
 
-  describe('with DiaOracle', () => {
+  describe.only('with DiaOracle', () => {
     const [deployer] = accounts
     const coinName = 'ETH/USD'
     const ethPrice = '1120000000000000000000'
     let oracle
-    describe('GIVEN a DiaOracle', () => {
+    const now = Date.now().toString()
+    before(async () => {
+      oracle = await DiaOracle.new({ from: deployer })
+    })
+    describe('WHEN asking for a non-set price', () => {
+      let coinInfo
+      before(async () => {
+        coinInfo = await oracle.getCoinInfo(coinName)
+      })
+      it('THEN price is zero', () => {
+        const price = coinInfo[0]
+        const supply = coinInfo[1]
+        const lastUpdateTimestamp = coinInfo[2]
+        const symbol = coinInfo[3]
+        price.toString().should.equal('0')
+        supply.toString().should.equal('0')
+        lastUpdateTimestamp.toString().should.equal('0')
+        symbol.should.equal('')
+      })
+    })
+    describe('GIVEN a DIA oracle adapter', () => {
+      let adapter
       before(async () => {
         oracle = await DiaOracle.new({ from: deployer })
+        adapter = await DiaOracleAdapter.new(oracle.address, coinName)
+        await oracle.updateCoinInfo(coinName, 'ETH/USD', ethPrice, '4', now)
       })
-      describe('WHEN asking for a non-set price', () => {
-        let coinInfo
+      describe('WHEN calling latestPrice()', () => {
+        let price
         before(async () => {
-          coinInfo = await oracle.getCoinInfo(coinName)
+          price = await adapter.latestPrice()
         })
-        it('THEN price is zero', () => {
-          const price = coinInfo[0]
-          const supply = coinInfo[1]
-          const lastUpdateTimestamp = coinInfo[2]
-          const symbol = coinInfo[3]
-          price.toString().should.equal('0')
-          supply.toString().should.equal('0')
-          lastUpdateTimestamp.toString().should.equal('0')
-          symbol.should.equal('')
+        it('THEN the price from the dia oracle is returned', () => {
+          price.toString().should.equal(ethPrice)
         })
-        const now = Date.now().toString()
-        describe('AND WHEN setting a price', () => {
-          before(async () => {
-            await oracle.updateCoinInfo(coinName, 'ETH/USD', ethPrice, '4', now)
-            coinInfo = await oracle.getCoinInfo(coinName)
-          })
-          it('THEN the price can be read', () => {
-            const price = coinInfo[0]
-            const supply = coinInfo[1]
-            const lastUpdateTimestamp = coinInfo[2]
-            const symbol = coinInfo[3]
-            price.toString().should.equal(ethPrice)
-            supply.toString().should.equal('4')
-            lastUpdateTimestamp.toString().should.equal(now)
-            symbol.should.equal('ETH/USD')
-          })
-        })
-        describe('GIVEN a DIA oracle adapter', () => {
-          let adapter
-          before(async () => {
-            adapter = await DiaOracleAdapter.new(oracle.address, coinName)
-          })
-          describe('WHEN calling latestPrice()', () => {
-            let price
-            before(async () => {
-              price = await adapter.latestPrice()
-            })
-            it('THEN the price from the dia oracle is returned', () => {
-              price.toString().should.equal(ethPrice)
-            })
-          })
-        })
+      })
+    })
+    describe('AND WHEN setting a price', () => {
+      let coinInfo
+      before(async () => {
+        oracle = await DiaOracle.new({ from: deployer })
+        await oracle.updateCoinInfo(coinName, 'ETH/USD', ethPrice, '4', now)
+        coinInfo = await oracle.getCoinInfo(coinName)
+      })
+      it('THEN the price can be read', () => {
+        const price = coinInfo[0]
+        const supply = coinInfo[1]
+        const lastUpdateTimestamp = coinInfo[2]
+        const symbol = coinInfo[3]
+        price.toString().should.equal(ethPrice)
+        supply.toString().should.equal('4')
+        lastUpdateTimestamp.toString().should.equal(now)
+        symbol.should.equal('ETH/USD')
       })
     })
   })
